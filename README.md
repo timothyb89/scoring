@@ -46,14 +46,19 @@ point on the TODO list.
 
 On audio: This uses the standard JDK audio libraries, which comes with some
 caveats:
- # Supports only .wav formatted audio (though vorbis/ogg could be added fairly
-   easily if requested)
- # On Linux, versions of Java before 1.7 frequently fail to detect the sound 
-   device properly. This should be fixed with the new audio backend (Gervill)
+ 1. Supports only .wav formatted audio (though vorbis/ogg could be added fairly
+    easily if requested)
+ 2. On Linux, versions of Java before 1.7 frequently fail to detect the sound 
+    device properly. This should be fixed with the new audio backend (Gervill)
 
 Note that you probably need a Java 1.7 to run the software anyway, due to the
 server library (Jetty) dropping support for 1.6, so point #2 is probably a
 non-issue anymore.
+
+Also note that for licensing reasons no audio files are currently included. For
+FRC teams you can generally find a copy of the .wav files used by the FIRST FMS
+inside its program directory. If these files can be confirmed as public domain,
+we'll include them here, but until then, we'll be looking for alternatives.
 
 Authors
 -------
