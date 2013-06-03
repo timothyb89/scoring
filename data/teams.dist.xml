@@ -1,0 +1,23 @@
+<!--
+File: teams.xml
+
+Contains a list of teams that will compete. Note that the name can be changed
+after matches have taken place without breaking anything (the number is the
+important part).
+
+Note: The web interface may modify this file and remove comments and formatting.
+
+Team list structure / documentation:
+<list>
+	<team>
+		- number: The number (integer) of the team.
+		- name: The name (string) of the team. Can be changed at any time.
+-->
+<list>
+  <team number="1" name="Team #1"/>
+  <team number="2" name="Team #2"/>
+  <team number="3" name="Team #3"/>
+  <team number="4" name="Team #4"/>
+  <team number="5" name="Team #5"/>
+  <team number="6" name="Team #6"/>
+</list>

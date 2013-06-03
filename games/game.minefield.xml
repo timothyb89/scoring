@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+File: game.xml
+This is a sample game configuration, called "Minefield". It defines a game 3
+minutes long with 4 main periods and associated sounds. This game has two
+competing alliances (Red and Blue) and a number of scoring objectives, each
+with varying point values.
+
+Game definition structure / documentation:
+<game>
+	- name: a string of text whose value is used throughout the app.
+	<periods>
+		- length: an integer, specifying the total length of a match
+		<period>
+			- name: the name of the period, displayed on the status panel
+			- start: the starting time for the period (seconds). The first
+				period starting time should equal the above 'length'.
+			- sound: the relative path to a sound file to play on period start.
+				Any format supported by the system GStreamer should work here.
+				No sound will play if GStreamer isn't installed / available.
+	<scheduler>
+		- rounds: the minimum number of matches for each team to play; more will
+			be generated.
+		- allianceSize: the number of teams on each alliance
+		<fieldConstants> - annealing constants for the field side constraint
+			[ NOTE: These values are optional and the defaults should work. ]
+			- temperature: The initial "temperature," a measure of how much
+				hill climbing is allowed
+			- tStep: The amount to multiply the temperature by after each
+				annealing.  0 < x < 1
+			- annealTime The number of moves computed at each temperature.
+			- lowestTemp The temperature at which the annealing will stop. x > 0
+		<pairingConstants> - annealing constants for the pairing constraint
+			[ NOTE: These values are optional and the defaults should work. ]
+			- temperature: The initial "temperature," a measure of how much hill
+				climbing is allowed
+			- tStep: The amount to multiply the temperature by after each
+				annealing.  0 < x < 1
+			- annealTime The number of moves computed at each temperature.
+			- lowestTemp The temperature at which the annealing will stop. x > 0
+	<alliances>
+		<alliance>
+			- name: The name of the alliance, shown in several places.
+			<color> - Alliance color information (standard RGBA)
+				<red> - The red value for the color [0 - 255]
+				<green> - The green value for the color [0 - 255]
+				<blue> - The blue value for the color [0 - 255]
+				<alpha> - Alpha byte, should always be 255 for 100% opacity
+	<groups> - config for scoring groups
+		<group> - defines a group, they'll show on the UI in the order listed here
+			- name: the group name as will show on-screen
+	<properties>
+		<property> - represents some scoring objective
+			- name: The name of the property shown to judges
+			- group: the scoring group this property belongs to (optional, but
+				recommended)
+			<constraints>
+				- minimum: The lowest allowed value for the property (probably 
+					zero)
+				- maximum: The highest allowed value for the property (keep at
+					2147483647 if unsure)
+				- exclusive: (untested) Default: false. If true, only one
+					alliance can have a nonzero value for this objective.
+			<multiplier>
+				- type: 'normal' or 'linear' by default. Valid types:
+					'linear': f(x)=n*[amount]
+					'exponential': f(x)=[amount]^n
+				- amount: The number of points to give for each occurrence of
+					this objective. Can be negative for penalties.
+-->
+<game name="Minefield">
+	<periods length="180">
+		<period name="Autonomous" start="180" sound="res/sound/match_start.wav"/>
+		<period name="Teleop" start="160" sound="res/sound/teleop_start.wav"/>
+		<period name="Ending" start="15" sound="res/sound/match_timewarn.wav"/>
+		<period name="Finished" start="0" sound="res/sound/match_end.wav"/>
+		<period name="Abort" start="-2" sound="res/sound/match_abort.wav"/>
+	</periods>
+	<scheduler rounds="10" allianceSize="2">
+		<fieldConstants temperature="100.0" tStep="0.99" annealTime="10.0" lowestTemp="0.001"/>
+		<pairingConstants temperature="100.0" tStep="0.9" annealTime="10.0" lowestTemp="0.001"/>
+	</scheduler>
+	<alliances>
+		<alliance name="Red">
+			<color>
+				<red>255</red>
+				<green>0</green>
+				<blue>0</blue>
+				<alpha>255</alpha>
+			</color>
+		</alliance>
+		<alliance name="Blue">
+			<color>
+				<red>0</red>
+				<green>0</green>
+				<blue>255</blue>
+				<alpha>255</alpha>
+			</color>
+		</alliance>
+	</alliances>
+	<groups>
+	</groups>
+	<properties>
+		<property name="Auton Checkpoints">
+			<constraints minimum="0" maximum="2147483647" exclusive="false"/>
+			<multiplier type="normal" amount="5"/>
+		</property>
+		<property name="Mine Disarm">
+			<constraints minimum="0" maximum="2147483647" exclusive="false"/>
+			<multiplier type="normal" amount="2"/>
+		</property>
+		<property name="Score Ball">
+			<constraints minimum="0" maximum="2147483647" exclusive="false"/>
+			<multiplier type="normal" amount="5"/>
+		</property>
+		<property name="Mine Detonate">
+			<constraints minimum="0" maximum="2147483647" exclusive="false"/>
+			<multiplier type="normal" amount="-5"/>
+		</property>
+		<property name="Score Block">
+			<constraints minimum="0" maximum="2147483647" exclusive="false"/>
+			<multiplier type="normal" amount="1"/>
+		</property>
+		<property name="Score Endgame">
+			<constraints minimum="0" maximum="2147483647" exclusive="false"/>
+			<multiplier type="normal" amount="10"/>
+		</property>
+		<property name="Bonus">
+			<constraints minimum="0" maximum="2147483647" exclusive="false"/>
+			<multiplier amount="1"/>
+		</property>
+		<property name="Penalties">
+			<constraints minimum="0" maximum="2147483647" exclusive="false"/>
+			<multiplier amount="-1"/>
+		</property>
+	</properties>
+</game>

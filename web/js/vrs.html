@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>VRS Test</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	</head>
+	<body>
+		<script type="text/javascript" src="jquery.js"></script>
+		<script type="text/javascript" src="vrs.js"></script>
+		<script type="text/javascript">
+			//teams = VRS.getTeams();
+			
+			
+			VRS.getTeams(function(teams) {
+				var listItems = [];
+				
+				$.each(teams, function(team) {
+					
+					
+					listItems.push(
+							'<li>#' +
+								team.number + ": " + team.name +
+							"</li>");
+				});
+			});
+			
+			
+			teams.forEach(function(team) {
+				document.write("<li>" + team.number + ": " + team.name + "</li>")
+			});
+			
+			
+			result = VRS.addTeam(42, "The Hitchhikers");
+		</script>
+	</body>
+</html>

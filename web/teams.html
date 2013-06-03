@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Scoring: Teams</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		
+		<link rel="stylesheet" type="text/css" href="js/jquery.mobile-1.1.0.min.css"/>
+		
+		<script type="text/javascript" src="js/jquery.js"></script>
+		<script type="text/javascript" src="js/json2.js"></script>
+		<script type="text/javascript" src="js/jquery.mobile-1.1.0.min.js"></script>
+		<script type="text/javascript" src="js/jquery.mobile.pageparams.js"></script>
+		<script type="text/javascript" src="js/vrs.js"></script>
+	</head>
+	<body>
+		<div id="page-home" data-role="page">
+			<div data-role="header">
+				<a href="index.html" data-icon="home" data-ajax="false">Home</a>
+				<h1>Teams</h1>
+				<a href="#" id="team-list-refresh" data-icon="refresh">Refresh</a>
+			</div>
+			
+			<div id="page-home-content" data-role="content">
+				<ul id="team-list"
+					data-role="listview"
+					data-split-icon="delete"
+					data-inset="true">
+					<li>Loading...</li>
+				</ul>
+				<a href="#dialog-add"
+				   data-role="button"
+				   data-rel="dialog"
+				   data-icon="add">Add Team</a>
+			</div>
+		</div>
+		
+		<div id="dialog-delete" data-role="page">
+			<div data-role="header">
+				<h1>Delete Confirmation</h1>
+			</div>
+			
+			<div data-role="content">
+				<p>Really delete team #<span id="delete-team">[X]</span>?</p>
+				<div data-role="controlgroup" data-type="horizontal">
+					<button id="delete-confirm"
+							data-icon="delete"
+							data-theme="b">Delete</button>
+					<a href="#page-home"
+					   data-role="button"
+					   data-rel="back"
+					   data-icon="back">Cancel</a>
+				</div>
+			</div>
+		</div>
+		
+		<div id="dialog-add" data-role="page">
+			<div data-role="header">
+				<h1>Add Team</h1>
+			</div>
+			
+			<div data-role="content">
+				<h3>Add Team</h3>
+				<p>
+					Number: <input id="team-new-number" type="number"/><br>
+					Name: <input id="team-new-name" type="text" size="20"/><br>
+				</p>
+				<div class="ui-grid-a">
+					<div class="ui-block-a">
+						<button id="team-new-submit"
+								data-icon="add"
+								data-theme="b">Submit</button>
+					</div>
+					<div class="ui-block-b">
+						<a href="#page-home" 
+						   data-role="button"
+						   data-rel="back"
+						   data-icon="back">Cancel</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<script type="text/javascript">
+			var teamList = null;
+			var selectedTeam = null;
+			
+			getTeam = function(number) {
+				for (team in teamList) {
+					console.log(teamList[team]);
+					if (teamList[team].number == number) {
+						return teamList[team];
+					}
+				}
+				
+				return null;
+			}
+			
+			getTeamList = function() {
+				var list = $("#team-list");
+				list.empty();
+				
+				VRS.getTeams(function(teams) {
+					teamList = teams;
+					
+					teams.forEach(function(team) {
+						var li = $("<li>");
+						
+						var a = $('<a href="#">');
+						a.append($('<h3> Team #' + team.number + '</h3>'));
+						a.append($("<p>" + team.name + "</p>"));
+						li.append(a);
+						
+						var delA = $("<a>");
+						delA.attr("href", "#dialog-delete?team=" + team.number);
+						delA.attr("data-rel", "dialog");
+						delA.attr("data-transition", "none");
+						li.append(delA);
+						
+						list.append(li);
+					});
+					
+					$("#team-list").listview("refresh");
+				});
+			}
+			
+			$("#delete-confirm").click(function() {
+				VRS.deleteTeam(selectedTeam.number);
+				getTeamList();
+				$("#dialog-delete").dialog("close");
+			});
+			
+			$("#team-new-submit").click(function() {
+				var number = parseInt($("#team-new-number").val());
+				var name = $("#team-new-name").val();
+				
+				VRS.addTeam(number, name);
+				getTeamList();
+				$("#dialog-add").dialog("close");
+				
+				$("#team-new-number").val("");
+				$("#team-new-name").val("");
+			});
+			
+			$("#team-list-refresh").click(function() {
+				getTeamList();
+			});
+			
+			$(document).bind("pageinit", function() {
+				getTeamList();
+			});
+			
+			$(document).bind("pagechange", function(e, data) {
+				var target = data.toPage[0];
+				if (target.id == "dialog-delete") {
+					var teamNumber = parseInt(data.options.pageData.team);
+					console.log("#dialog-delete: team=" + teamNumber);
+					console.log(teamList);
+					
+					selectedTeam = getTeam(teamNumber);
+					console.log(selectedTeam);
+					
+					// set fields
+					$("#delete-team").html(selectedTeam.number + " (" + selectedTeam.name + ")");
+				}
+			});
+		</script>
+	</body>
+</html>

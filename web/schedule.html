@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Scoring: Schedule</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		
+		<link rel="stylesheet" type="text/css" href="js/jquery.mobile-1.1.0.min.css"/>
+		<link rel="stylesheet" type="text/css" href="js/jquery.mobile.simpledialog.min.css"/>
+		
+		<script type="text/javascript" src="js/jquery.js"></script>
+		<script type="text/javascript" src="js/json2.js"></script>
+		<script type="text/javascript" src="js/jquery.mobile-1.1.0.min.js"></script>
+		<script type="text/javascript" src="js/jquery.mobile.pageparams.js"></script>
+		<script type="text/javascript" src="js/jquery.mobile.simpledialog2.min.js"></script>
+		<script type="text/javascript" src="js/vrs.js"></script>
+    </head>
+    <body>
+        <div id="page-home" data-role="page">
+			<div data-role="header">
+				<a href="index.html" data-icon="home" data-ajax="false">Home</a>
+				<h1>Schedule</h1>
+				<a href="#" id="refresh-link" data-icon="refresh">Refresh</a>
+			</div>
+			<div data-role="content">
+				<ul id="schedule" data-role="listview"></ul>
+			</div>
+		</div>
+		
+		<script type="text/javascript">
+			var schedule = null;
+			
+			updateSchedule = function(matches) {
+				schedule = matches;
+				
+				var list = $("#schedule");
+				list.empty();
+				
+				matches.forEach(function(match) {
+					var li = $("<li>");
+					li.append("<h3>Match #" + match.number + "</h3>")
+					match.alliances.forEach(function(alliance) {
+						li.append("<p>"
+								+ alliance.name + ": "
+								+ alliance.teams.join(", ") + "</p>");
+					});
+					
+					list.append(li);
+					
+					li.click(function() {
+						setMatch(match);
+					})
+				});
+				
+				list.listview('refresh');
+			}
+			
+			setMatch = function(match) {
+				VRS.getStatus(function(status) {
+					if (status != "uninitialized") {
+						alert("A match is in progress, finish it first.");
+						return;
+					}
+					
+					$("<div>").simpledialog2({
+						mode: 'button',
+						headerText: 'Confirm Set',
+						headerClose: true,
+						buttonPrompt: "Really set match #" + match.number +"?",
+						transition: 'none',
+						buttons: {
+							'Yes': {
+								click: function() {
+									VRS.matchInit(match.alliances);
+								}
+							}, 'Cancel': {
+								click: function() {
+									// do nothing
+								},
+								icon: "delete"
+							}
+						}
+					});
+				});
+			}
+			
+			refresh = function() {
+				VRS.getSchedule(function(matches) {
+					updateSchedule(matches);
+				});
+			}
+			$("#refresh-link").click(refresh);
+			
+			$(document).bind("pageinit", function() {
+				refresh();
+			});
+			
+			$(document).bind("pagechange", function(e, data) {
+				var target = data.toPage[0];
+				if (target.id == "dialog-delete") {
+					var teamNumber = parseInt(data.options.pageData.team);
+					console.log("#dialog-delete: team=" + teamNumber);
+					console.log(teamList);
+					
+					selectedTeam = getTeam(teamNumber);
+					console.log(selectedTeam);
+					
+					// set fields
+					$("#delete-team").html(selectedTeam.number + " (" + selectedTeam.name + ")");
+				}
+			});
+		</script>
+    </body>
+</html>

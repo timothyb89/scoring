@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Match Control</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<meta name="viewport" content="width=device-width"/>
+		<link rel="stylesheet" type="text/css" href="style.css"/>
+	</head>
+	<body>
+		<script type="text/javascript" src="/js/jquery.js"></script>
+		<script type="text/javascript" src="/js/vrs.js"></script>
+		
+		<h2>Match Control</h2>
+		
+		<button id="control-match-init"   type="button">Match Init</button>
+		<button id="control-match-start"  type="button">Match Start</button>
+		<button id="control-match-stop"   type="button">Match Stop</button>
+		<button id="control-match-pause"  type="button">Match Pause</button>
+		<button id="control-match-resume" type="button">Match Resume</button>
+		<button id="control-match-finish" type="button">Match Finish</button>
+		<button id="control-match-cancel" type="button">Match Cancel</button>
+		
+		
+		<p>
+			<a href="/">Home</a>
+		</p>
+		
+		<div id="overlay">
+			<div id="overlay-inner">
+			</div>
+		</div>
+		
+		<script type="text/javascript">
+			var teams = null;
+			var alliances = null;
+			
+			showOverlay = function() {
+				$('#overlay').css("visibility", "visible");
+				window.scroll(0, 0);
+			}
+			
+			hideOverlay = function() {
+				$('#overlay').css("visibility", "hidden");
+				window.scroll(0, 0);
+			}
+
+			createTeamPicker = function() {
+				if (teams == null || alliances == null) {
+					return;
+				}
+				$("#overlay-inner").empty();
+				
+				var finalAlliances = [];
+				
+				alliances.forEach(function(alliance) {
+					var label = $("<span>Alliance: " + alliance + "</span>");
+					$("#overlay-inner").append(label);
+					
+					var table = $('<table width="100%">');
+					
+					var allianceObj = new Object();
+					allianceObj.name = alliance;
+					allianceObj.teams = [];
+					finalAlliances.push(allianceObj);
+					
+					teams.forEach(function(team) {
+						var row = $("<tr>");
+						
+						var teamLabel = $("<td>#" + team.number + ": " + team.name + "</td>");
+						teamLabel.click(function() {
+							allianceObj.teams.push(team.number);
+							$(this).parent().remove();
+						});
+						row.append(teamLabel);
+						
+						var button = $('<button type="button">+</button>');
+						button.click(function() {
+							allianceObj.teams.push(team.number);
+							$(this).parent().parent().remove();
+						});
+						
+						var buttonRow = $("<td>");
+						buttonRow.append(button);
+						row.append(buttonRow);
+						
+						table.append(row);
+					});
+					
+					$("#overlay-inner").append(table);
+					
+					$("#overlay-inner").append(
+						$('<br><span style="width: 100%; height: 1em">&nbsp;</span>')
+					);
+				});
+				var button = $('<button type="button">Submit</button>');
+				button.click(function() {
+					//hideOverlay();
+					VRS.matchInit(finalAlliances, function(data) {
+						hideOverlay();
+					});
+				});
+				$("#overlay-inner").append(button)
+				
+				var cancelButton = $('<button type="button">Cancel</button>');
+				cancelButton.click(function() {
+					hideOverlay();
+				})
+				$("#overlay-inner").append(cancelButton);
+				
+				showOverlay();
+			}
+
+			showTeamPicker = function() {
+				VRS.getTeams(function(data) {
+					teams = data;
+					createTeamPicker();
+				})
+				
+				VRS.getAlliances(function(data) {
+					alliances = data;
+					createTeamPicker();
+				})
+			}
+			
+			$("#control-match-init").click(function() {
+				showTeamPicker();
+			})
+			
+			$("#control-match-start").click(function() {
+				VRS.matchStart();
+			});
+			
+			$("#control-match-stop").click(function() {
+				VRS.matchStop();
+			});
+			
+			$("#control-match-pause").click(function() {
+				VRS.matchPause();
+			});
+			
+			$("#control-match-resume").click(function() {
+				VRS.matchResume();
+			});
+			
+			$("#control-match-finish").click(function() {
+				VRS.matchFinish();
+			});
+			
+			$("#control-match-cancel").click(function() {
+				VRS.matchCancel();
+			});
+		</script>
+	</body>
+</html>

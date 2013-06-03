@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Scoring</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		
+		<link rel="stylesheet" type="text/css" href="js/jquery.mobile-1.1.0.min.css"/>
+		<link rel="stylesheet" type="text/css" href="js/jquery.mobile.simpledialog.min.css"/>
+		
+		<script type="text/javascript" src="js/json2.js"></script>
+		<script type="text/javascript" src="js/jquery.js"></script>
+		<script type="text/javascript" src="js/jquery.mobile-1.1.0.min.js"></script>
+		<script type="text/javascript" src="js/jquery.mobile.pageparams.js"></script>
+		<script type="text/javascript" src="js/jquery.mobile.simpledialog2.min.js"></script>
+		<script type="text/javascript" src="js/vrs.js"></script>
+	</head>
+	<body>
+		<div id="page-home" data-role="page">
+			<div data-role="header">
+				<a href="index.html" data-icon="home" data-ajax="false">Home</a>
+				<h1>Scoring</h1>
+			</div>
+			<div data-role="content">
+				<h2>Select Alliance</h2>
+				<div id="alliance-list-container">
+					Loading alliances...
+				</div>
+				<h2>Scoring for <span id="alliance-label">[X]</span></h2>
+				<div id="scoring">
+					
+				</div>
+
+				<h3>Match Status</h3>
+				Match status: <span id="status-label">Unknown</span><br/>
+
+				<div id="control-uninitialized" style="display: none;">
+					<button type="button" id="cu-create">Create Match</button>
+				</div>
+
+				<div id="control-initialized" style="display: none">
+					<button type="button" id="ci-start">Start Match</button>
+					<button class="button-cancel">Cancel Match</button>
+					<button type="button" id="ci-finish">Finish & Save Match</button>
+				</div>
+
+				<div id="control-running" style="display: none">
+					<button type="button" id="cr-stop">Stop & Reset Timer</button>
+					<button type="button" id="cr-pause">Pause Match</button>
+					<button class="button-cancel">Cancel Match</button>
+					<button type="button" id="cr-finish">Finish & Save Match</button>
+				</div>
+
+				<div id="control-paused" style="display: none">
+					<button type="button" id="cp-stop">Stop & Reset Timer</button>
+					<button type="button" id="cp-resume">Resume Match</button>
+					<button class="button-cancel">Cancel Match</button>
+					<button type="button" id="cp-finish">Finish & Save Match</button>
+				</div>
+
+				<div id="control-finished" style="display: none">
+					<button type="button" id="cf-start">Restart Match</button>
+					<button class="button-cancel">Cancel Match</button>
+					<button type="button" id="cf-finish">Finish & Save Match</button>
+				</div>
+			</div>
+		</div>
+		<div id="dialog-create" data-role="page">
+			<div data-role="header">
+				<h1>New Match</h1>
+			</div>
+			<div id="dialog-create-content" data-role="content">
+				
+			</div>
+		</div>
+		
+		<script type="text/javascript">
+			button = function(text, onclick) {
+				var button = $('<button type="button">');
+				button.html(text);
+				button.click(onclick);
+				
+				return button;
+			}
+			
+			showOverlay = function() {
+				$('#overlay').css("visibility", "visible");
+				window.scroll(0, 0);
+			}
+			
+			hideOverlay = function() {
+				$('#overlay').css("visibility", "hidden");
+				window.scroll(0, 0);
+			}
+			
+			var alliance = null;
+			
+			var pointFields = new Object();
+			
+			setAlliance = function(a) {
+				pointFields = new Object();
+				alliance = a;
+				
+				$("#scoring").empty();
+				$("#alliance-label").html(a);
+				
+				VRS.getProperties(function(properties) {
+					var table = $('<table width="100%">');
+					
+					properties.forEach(function(prop) {
+						var row = $("<tr>");
+						
+						row.append($('<td>' + prop + '</td>'));
+						
+						var valueField = $('<td>?</td>');
+						valueField.css("text-align", "center");
+						pointFields[prop] = valueField;
+						row.append(valueField);
+						
+						var minusButton = $('<button type="button">-</button>');
+						minusButton.click(function() {
+							VRS.subtractPoint(alliance, prop, function() {
+								// TODO: update valueField here
+								VRS.getPoint(alliance, prop, function(data) {
+									valueField.html(data.value);
+								});
+							})
+						});
+						row.append($("<td>").append(minusButton));
+						
+						var plusButton = $('<button type="button">+</button>');
+						plusButton.click(function() {
+							VRS.addPoint(alliance, prop, function() {
+								// TODO: update value field here
+								VRS.getPoint(alliance, prop, function(data) {
+									valueField.html(data.value);
+								});
+							});
+						});
+						row.append($("<td>").append(plusButton));
+						
+						table.append(row);
+					})
+					
+					$("#scoring").append(table);
+				});
+			}
+			
+			showAlliances = function() {
+				VRS.getAlliances(function(alliances) {
+					$("#alliance-list-container").empty();
+					
+					var fs = $('<fieldset data-role="controlgroup" data-type="horizontal">');
+					
+					alliances.forEach(function(a) {
+						var input = $('<input type="radio" id="alliance-' + a + '" value="' + a + '"/>');
+						var label = $('<label for="alliance-' + a + '">' + a + '</label>');
+						
+						input.click(function() {
+							setAlliance(a);
+							
+							// bug or something, work around it to show selection
+							fs.find("label").removeClass("ui-btn-active");
+							label.addClass("ui-btn-active");
+						})
+						
+						fs.append(input);
+						fs.append(label);
+					});
+					
+					$("#alliance-list-container").append(fs).trigger("create");
+				});
+			}
+			showAlliances();
+			
+			showElement = function(element) {
+				element.css("display", "block");
+			}
+			
+			hideElement = function(element) {
+				element.css("display", "none");
+			}
+			
+			getPoints = function() {
+				
+			}
+			
+			secondsToTime = function(seconds) {
+				var mins = new String(Math.floor(seconds / 60));
+				var secs = new String(seconds % 60);
+				
+				if (secs.length == 1) {
+					secs = "0" + secs;
+				}
+				
+				return mins + ":" + secs;
+			}
+			
+			statusReceived = function(status, time) {
+				var labelText = status + " - completed: " + status.latestMatch;
+				if (time) {
+					labelText += " - " + secondsToTime(time) + " remaining.";
+				}
+				
+				$("#status-label").html(labelText);
+				
+				var elements = [
+					"#control-uninitialized",
+					"#control-initialized",
+					"#control-running",
+					"#control-paused",
+					"#control-finished"
+				];
+				
+				if (status == "uninitialized") {
+					elements.remove("#control-uninitialized");
+					showElement($("#control-uninitialized"));
+				} else if (status == "initialized") {
+					elements.remove("#control-initialized");
+					showElement($("#control-initialized"));
+				} else if (status == "running") {
+					elements.remove("#control-running");
+					showElement($("#control-running"));
+				} else if (status == "paused") {
+					elements.remove("#control-paused");
+					showElement($("#control-paused"));
+				} else if (status == "finished") {
+					elements.remove("#control-finished");
+					showElement($("#control-finished"));
+				}
+				
+				elements.forEach(function(element) {
+					hideElement($(element));
+				});
+				
+				if (alliance != null) {
+					if (status != "uninitialized") {
+						VRS.getPoints(alliance, function(points) {
+							points.forEach(function(point) {
+								pointFields[point.name].html(point.value);
+							});
+						});
+					} else {
+						for (key in pointFields) {
+							pointFields[key].html("?");
+						}
+					}
+				}
+			}
+			
+			getStatus = function() {
+				VRS.getStatus(statusReceived);
+			}
+			setInterval(getStatus, 1000);
+			
+			var time = 0;
+			updateTime = function() {
+				
+			}
+			setInterval(updateTime, 100);
+			
+			getStatus();
+			
+			matchStart = function() {
+				VRS.matchStart(function() {
+					getStatus();
+				});
+			}
+			
+			matchStop = function() {
+				$("<div>").simpledialog2({
+					mode: 'button',
+					headerText: 'Confirm Reset',
+					headerClose: true,
+					buttonPrompt: "Really stop and reset this match?",
+					transition: 'none',
+					buttons: {
+						'Yes': {
+							click: function() {
+								VRS.matchStop(function() {
+									getStatus();
+								})
+							}
+						}, 'Cancel': {
+							click: function() {
+								// do nothing
+							},
+							icon: "delete"
+						}
+					}
+				});
+			}
+			
+			matchCancel = function() {
+				console.log("matchCancel()");
+				$("<div>").simpledialog2({
+					mode: 'button',
+					headerText: 'Confirm Cancel',
+					headerClose: true,
+					buttonPrompt: "Really cancel this match?",
+					transition: 'none',
+					buttons: {
+						'Yes': {
+							click: function() {
+								VRS.matchCancel(function() {
+									getStatus();
+								})
+							}
+						}, 'Cancel': {
+							click: function() {
+								// do nothing
+							},
+							icon: "delete"
+						}
+					}
+				});
+			}
+			
+			matchFinish = function() {
+				$("<div>").simpledialog2({
+					mode: 'button',
+					headerText: 'Confirm Save',
+					headerClose: true,
+					buttonPrompt: "Really end and save this match?",
+					transition: 'none',
+					buttons: {
+						'Yes': {
+							click: function() {
+								VRS.matchFinish(function() {
+									getStatus();
+								})
+							}
+						}, 'Cancel': {
+							click: function() {
+								// do nothing
+							},
+							icon: "delete"
+						}
+					}
+				});
+			}
+			
+			matchPause = function() {
+				VRS.matchPause(function() {
+					getStatus();
+				});
+			}
+			
+			matchResume = function() {
+				VRS.matchResume(function() {
+					getStatus();
+				});
+			}
+			
+			var teams = null;
+			var alliances = null;
+			
+			createTeamPicker = function() {
+				if (teams == null || alliances == null) {
+					return;
+				}
+				
+				$.mobile.changePage("#dialog-create", {role: "dialog", transition: 'none'});
+				var page = $("#dialog-create-content");
+				page.empty();
+				
+				alliances.forEach(function(alliance) {
+					var div = $("<div>");
+					div.append("<h2>Alliance: " + alliance + "</h2>");
+					
+					var fields = $("<div>").attr({
+						'data-role': 'controlgroup',
+						'data-alliance': alliance
+					});
+					
+					teams.forEach(function(team) {
+						var fieldId = 'team-' + team.number + '-' + alliance;
+						var teamField = $("<input>").attr({
+							'id': fieldId,
+							'type': 'checkbox',
+							'data-team': team.number
+						});
+						fields.append(teamField);
+						
+						var teamLabel = $("<label>").attr({
+							'for': fieldId
+						}).html("#" + team.number + ": " + team.name);
+						fields.append(teamLabel);
+					});
+					
+					div.append(fields);
+					
+					page.append(div);
+					
+					var allianceObj = new Object();
+					allianceObj.name = alliance;
+					allianceObj.teams = [];
+					//finalAlliances.push(allianceObj);
+				});
+				
+				var buttons = $("<div>").attr({
+					'class': 'ui-grid-a'
+				})
+				
+				var submitWrapper = $('<div class="ui-block-a">');
+				var submitButton = $("<button>Submit</button>").attr({
+					'data-icon': 'submit',
+					'data-theme': 'b'
+				}).click(function() {
+					var finalAlliances = [];
+					
+					alliances.forEach(function(alliance) {
+						// select teams with voodoo / crazy css selectors
+						var teams = [];
+						$("div[data-alliance='" + alliance + "'] input[data-team]:checked").each(
+							function(index, element) {
+								teams.push(parseInt($(element).attr("data-team")));
+							}
+						);
+						
+						// add alliance object to list
+						finalAlliances.push({
+							'name': alliance,
+							'teams': teams
+						})
+					});
+					$("#dialog-create").dialog("close");
+					console.log(finalAlliances);
+					
+					VRS.matchInit(finalAlliances, function(data) {
+						getStatus(); // refresh status
+					});
+				});
+				submitWrapper.append(submitButton);
+				buttons.append(submitWrapper);
+				
+				var cancelWrapper = $('<div class="ui-block-b">');
+				var cancelButton = $("<button>Cancel</button>").attr({
+					'data-icon': 'delete'
+				}).click(function() {
+					$("#dialog-create").dialog("close");
+				});
+				cancelWrapper.append(cancelButton);
+				buttons.append(cancelWrapper);
+				page.append(buttons);
+				
+				page.trigger("create");
+				
+				/*
+				var button = $('<button type="button">Submit</button>');
+				button.click(function() {
+					//hideOverlay();
+					VRS.matchInit(finalAlliances, function(data) {
+						hideOverlay();
+						getStatus();
+					});
+				});
+				$("#overlay-inner").append(button)*/
+				
+				var cancelButton = $('<button type="button">Cancel</button>');
+				cancelButton.click(function() {
+					hideOverlay();
+				})
+				$("#overlay-inner").append(cancelButton);
+				
+				showOverlay();
+				window.scroll(0, 0);
+			}
+
+			showTeamPicker = function() {
+				VRS.getTeams(function(data) {
+					teams = data;
+					createTeamPicker();
+				})
+				
+				VRS.getAlliances(function(data) {
+					alliances = data;
+					createTeamPicker();
+				})
+			}
+			
+			$(".button-cancel").click(matchCancel);
+			
+			$("#cu-create").click(showTeamPicker);
+			
+			$("#ci-start").click(matchStart);
+			$("#ci-finish").click(matchFinish);
+			
+			$("#cr-stop").click(matchStop);
+			$("#cr-pause").click(matchPause);
+			$("#cr-finish").click(matchFinish);
+			
+			$("#cp-stop").click(matchStop);
+			$("#cp-resume").click(matchResume);
+			$("#cp-finish").click(matchFinish);
+			
+			$("#cf-start").click(matchStart);
+			$("#cf-finish").click(matchFinish);
+		</script>
+	</body>
+</html>
