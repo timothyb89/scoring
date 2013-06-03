@@ -94,7 +94,8 @@ Match workflow:
 5. Repeat until finished
 
 Matches can be created with either the _Create Match_ button on the Scoring
-page, or by selecting an entry from the Schedule page. 
+page, or by selecting an entry from the Schedule page. New schedules will be
+generated automatically if `data/schedule.xml` isn't found at startup.
 
 API
 ---
